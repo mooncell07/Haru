@@ -1,14 +1,13 @@
-import subprocess
 import sys
 
 import pytest
-from haru import Communicator
+import haru
 
 
 @pytest.mark.asyncio
-async def test_communicator():
-    comm = Communicator()
-    output = await comm.run(
-        sys.executable, "-c", stdin="print('test')", stdout=subprocess.PIPE
+async def test_communicator() -> None:
+    communicator = haru.Communicator()
+    output = await communicator.run(
+        sys.executable, "-c", stdin="print('test')", stdout=haru.PIPE
     )
     assert output == "test\n"
