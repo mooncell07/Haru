@@ -15,7 +15,7 @@ class Communicator(IOMixin):
         loop = asyncio.get_running_loop()
 
         self.transport, _ = await loop.subprocess_exec(
-            lambda: HaruProtocol(self), program, args, stdin=stdin, stdout=stdout
+            lambda: HaruProtocol(self), program, args, stdin, stdout=stdout
         )
         await self.disconnect_event.wait()
 
