@@ -10,4 +10,4 @@ async def test_communicator() -> None:
     output = await communicator.run(
         sys.executable, "-c", stdin="print('test')", stdout=haru.PIPE
     )
-    assert output == "test\n"
+    assert output.rstrip() == "test"
