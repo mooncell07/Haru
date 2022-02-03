@@ -5,9 +5,15 @@ import haru
 
 
 @pytest.mark.asyncio
-async def test_communicator() -> None:
+async def test_run() -> None:
     communicator = haru.Communicator()
     output = await communicator.run(
         sys.executable, "-c", stdin="print('test')", stdout=haru.PIPE
     )
+    assert output == "test\n"
+
+@pytest.mark.asyncio
+async def test_run_in_shell() -> None:
+    communicator = haru.Communicator()
+    output = await communicator.run_in_shell("echo test", stdout=haru.PIPE)
     assert output == "test\n"
