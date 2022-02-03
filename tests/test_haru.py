@@ -10,10 +10,10 @@ async def test_run() -> None:
     output = await communicator.run(
         sys.executable, "-c", stdin="print('test')", stdout=haru.PIPE
     )
-    assert output == "test\n"
+    assert output.rstrip() == "test"
 
 @pytest.mark.asyncio
 async def test_run_in_shell() -> None:
     communicator = haru.Communicator()
     output = await communicator.run_in_shell("echo test", stdout=haru.PIPE)
-    assert output == "test\n"
+    assert output.rstrip() == "test"
