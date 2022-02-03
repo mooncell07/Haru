@@ -31,3 +31,13 @@ class Communicator(IOMixin):
         self.transport.close()
         data = bytes(self.process_output)
         return data.decode()
+
+    async def run_in_shell(self, code: str, stdin=None, stdout=None) -> str:
+        loop = asyncio.get_running_loop()
+
+        self.transport, _ = await loop.subprocess_shell(lambda: HaruProtocol(self), code, stdin=stdin, stdout=stdout)
+        await self.disconnect_event.wait()
+
+        self.transport.close()
+        data = bytes(self.process_output)
+        return data.decode()
