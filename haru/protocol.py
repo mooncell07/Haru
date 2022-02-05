@@ -16,7 +16,7 @@ class HaruProtocol(asyncio.SubprocessProtocol):
         self.communicator = communicator
 
     def pipe_data_received(self, _, data: bytes) -> None:
-        self.communicator.process_output.extend(data)
+        self.communicator.process_output.put_nowait(data)
 
     def process_exited(self) -> None:
         self.communicator.disconnect_event.set()
