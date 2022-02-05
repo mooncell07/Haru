@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from .mixins import IOMixin
 from .protocol import HaruProtocol
+from .process import Process
 
 __all__ = ("Communicator", "PIPE", "DEVNULL", "STDOUT")
 
@@ -22,9 +23,9 @@ class Communicator(AbstractContextManager, IOMixin):
     __slots__ = ("transport", "shell", "loop")
 
     def __init__(self, loop=None, shell=False) -> None:
-        self.transport: Optional[BaseTransport] = None
+        self._transport: Optional[BaseTransport] = None
         self.shell: bool = shell
-        self.loop = loop
+        self._loop = loop
 
         super().__init__()
 
@@ -33,42 +34,41 @@ class Communicator(AbstractContextManager, IOMixin):
         return self
 
     def _create_loop(self) -> None:
-        if self.loop is None:
+        if self._loop is None:
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-            self.loop = loop
+            self._loop = loop
 
     def __exit__(self, _, ex_value: Optional[BaseException], __) -> None:
-        if self.transport is not None:
-            self.transport.close()
-            self.disconnect_event.set()
+        self.close()
 
         if ex_value is not None:
             logger.exception(ex_value)
 
-    async def run(self, *args: Any, **kwargs: Any) -> str:
+    async def create_process(self, *args: Any, **kwargs: Any) -> Process:
         self._create_loop()
         if self.shell:
-            return await self._run_in_shell(*args, **kwargs)
-        return await self._shell_exec(*args, **kwargs)
+            return await self._create_shell(*args, **kwargs)
+        return await self._create_shell_exec(*args, **kwargs)
 
-    async def _shell_exec(
+    def close(self) -> None:
+        if self._transport is not None:
+            self._transport.close()
+            self.disconnect_event.set()
+
+    async def _create_shell_exec(
         self, program: str, args: str, stdin=None, stdout=None
-    ) -> str:
-        self.transport, _ = await self.loop.subprocess_exec(
+    ) -> Process:
+        self._transport, _ = await self._loop.subprocess_exec(
             lambda: HaruProtocol(self), program, args, stdin, stdout=stdout
         )
-        await self.disconnect_event.wait()
-        data = bytes(self.process_output)
-        return data.decode()
+        return Process(self)
 
-    async def _run_in_shell(self, code: str, stdin=None, stdout=None) -> str:
-        self.transport, _ = await self.loop.subprocess_shell(
+    async def _create_shell(self, code: str, stdin=None, stdout=None) -> Process:
+        self._transport, _ = await self._loop.subprocess_shell(
             lambda: HaruProtocol(self), code, stdin=stdin, stdout=stdout
         )
-        await self.disconnect_event.wait()
-        data = bytes(self.process_output)
-        return data.decode()
+        return Process(self)
