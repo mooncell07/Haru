@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class Communicator(AbstractContextManager, IOMixin):
-    __slots__ = ("transport", "shell", "loop")
+    __slots__ = ("_transport", "shell", "_loop")
 
     def __init__(self, loop=None, shell=False) -> None:
         self._transport: Optional[BaseTransport] = None

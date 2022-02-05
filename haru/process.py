@@ -46,5 +46,5 @@ class Process:
 
     async def execute(self) -> str:
         await self._communicator.disconnect_event.wait()
-        data = bytes(self._communicator.process_output)
+        data = bytes(await self._communicator.process_output.get())
         return data.decode()
