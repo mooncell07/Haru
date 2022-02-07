@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 if TYPE_CHECKING:
     from .communicator import Communicator
@@ -9,19 +10,25 @@ __all__ = ("Process",)
 
 
 class Process:
-    __slots__ = ("_communicator", "_transport", "_protocol")
+    __slots__ = ("_communicator", "_transport", "_protocol", "future", "kwargs")
 
-    def __init__(self, communicator: Communicator) -> None:
+    def __init__(self, communicator: Communicator, transport: Optional[asyncio.BaseTransport], future: asyncio.Future, **kwargs: Any) -> None:
         self._communicator = communicator
-        self._transport = cast(asyncio.SubprocessTransport, communicator._transport)
+        self._transport = cast(asyncio.SubprocessTransport, transport)
         if self._transport is not None:
             self._protocol = self._transport.get_protocol()
         else:
             raise Exception("transport not available.")
+        self.future = future
+        self.kwargs = kwargs
 
     @property
     def transport(self) -> Optional[asyncio.SubprocessTransport]:
         return self._transport
+    
+    @property
+    def protocol(self) -> asyncio.BaseProtocol:
+        return self._protocol
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
@@ -32,7 +39,7 @@ class Process:
         return self._transport.get_returncode()
 
     @property
-    def pid(self):
+    def pid(self) -> int:
         return self._transport.get_pid()
 
     def kill(self) -> None:
@@ -41,10 +48,14 @@ class Process:
     def send_signal(self, signal: int) -> None:
         self._transport.send_signal(signal)
 
-    def pipe_transport(self, fd: int):
+    def pipe_transport(self, fd: int) -> Optional[asyncio.BaseTransport]:
         return self._transport.get_pipe_transport(fd)
 
-    async def execute(self) -> str:
-        await self._communicator.disconnect_event.wait()
-        data = bytes(await self._communicator.process_output.get())
-        return data.decode()
+    async def execute(self) -> Optional[str]:
+        await self._communicator._disconnect_event.wait()
+        if self.kwargs.get("pipe_used"):
+            data = (await self.future).decode()
+        else:
+            data = None
+
+        return data
