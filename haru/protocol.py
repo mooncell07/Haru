@@ -10,13 +10,14 @@ __all__ = ("HaruProtocol",)
 
 
 class HaruProtocol(asyncio.SubprocessProtocol):
-    __slots__ = ("communicator",)
+    __slots__ = ("communicator", "future")
 
-    def __init__(self, communicator: Communicator) -> None:
+    def __init__(self, communicator: Communicator, future: asyncio.Future) -> None:
         self.communicator = communicator
+        self.future = future
 
     def pipe_data_received(self, _, data: bytes) -> None:
-        self.communicator.process_output.put_nowait(data)
+        self.future.set_result(data)
 
     def process_exited(self) -> None:
-        self.communicator.disconnect_event.set()
+        self.communicator._disconnect_event.set()
