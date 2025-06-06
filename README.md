@@ -1,2 +1,2 @@
 # Haru
-Higher level aio subprocess protocol impl
+Higher level aio subprocess protocol impl.
