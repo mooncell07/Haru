@@ -2,7 +2,7 @@
 name = "Haru"
 version = "0.1.0"
 description = "Higher level aio subprocess protocol impl"
-authors = ["mooncell07 <mooncell07@users.noreply.github.com>"]
+authors = ["Nova <mooncell07@proton.me>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
